@@ -3,6 +3,7 @@ const VERSION = "version_01";
 const CACHE_NAME = APP_PREFIX + VERSION;
 
 const FILES_TO_CACHE = [
+  "./",
   "./index.html",
   "./events.html",
   "./tickets.html",
@@ -14,20 +15,12 @@ const FILES_TO_CACHE = [
   "./dist/events.bundle.js",
   "./dist/tickets.bundle.js",
   "./dist/schedule.bundle.js",
+  "./dist/schedule.bundle.js",
 ];
 
-self.addEventListener("install", function (e) {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then(function (cache) {
-      console.log("installing cache : " + CACHE_NAME);
-      return cache.addAll(FILES_TO_CACHE);
-    })
-  );
-});
-
+// Respond with cached resources
 self.addEventListener("fetch", function (e) {
   console.log("fetch request : " + e.request.url);
-  console.log(e.request);
   e.respondWith(
     caches.match(e.request).then(function (request) {
       if (request) {
@@ -40,8 +33,21 @@ self.addEventListener("fetch", function (e) {
         return fetch(e.request);
       }
 
+      // if cache is available, respond with cache, no cache, try fetching request
       // You can omit if/else for console.log & put one line below like this too.
-      // return request || fetch(e.request)
+      return request || fetch(e.request);
+    })
+  );
+  // Makes sure updates to service worker take effect immediately
+  self.skipWaiting();
+});
+
+// Cache resources
+self.addEventListener("install", function (e) {
+  e.waitUntil(
+    caches.open(CACHE_NAME).then(function (cache) {
+      console.log("installing cache : " + CACHE_NAME);
+      return cache.addAll(FILES_TO_CACHE);
     })
   );
 });
@@ -53,7 +59,6 @@ self.addEventListener("activate", function (e) {
       // `keyList` contains all cache names under your username.github.io
       // filter out ones that has this app prefix to create keeplist
       let cacheKeeplist = keyList.filter(function (key) {
-        console.log("line 35", key);
         return key.indexOf(APP_PREFIX);
       });
       // add current cache name to keeplist
